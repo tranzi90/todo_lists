@@ -1,85 +1,129 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 
-import 'sample_feature/sample_item_details_view.dart';
-import 'sample_feature/sample_item_list_view.dart';
-import 'settings/settings_controller.dart';
-import 'settings/settings_view.dart';
+class TaskList {
+  String name;
+  bool isPublic;
+  List<Task> tasks;
 
-/// The Widget that configures your application.
+  TaskList({required this.name, required this.isPublic, required this.tasks});
+}
+
+class Task {
+  String name;
+  String description;
+  bool isImportant;
+  bool isCompleted;
+  DateTime lastModified;
+  DateTime createdAt;
+
+  Task(
+      {required this.name,
+      required this.description,
+      this.isImportant = false,
+      this.isCompleted = false,
+      required this.lastModified,
+      required this.createdAt});
+}
+
 class MyApp extends StatelessWidget {
-  const MyApp({
-    super.key,
-    required this.settingsController,
-  });
+  final List<TaskList> taskLists = [
+    TaskList(
+      name: "Домашние дела",
+      isPublic: true,
+      tasks: [
+        Task(
+          name: "Почистить квартиру",
+          description: "Вымыть полы, вынести мусор",
+          isImportant: true,
+          isCompleted: false,
+          lastModified: DateTime.now(),
+          createdAt: DateTime.now(),
+        ),
+        Task(
+          name: "Приготовить ужин",
+          description: "Приготовить пасту с овощами",
+          isImportant: false,
+          isCompleted: true,
+          lastModified: DateTime.now(),
+          createdAt: DateTime.now(),
+        ),
+      ],
+    ),
+    TaskList(
+      name: "Работа",
+      isPublic: true,
+      tasks: [
+        Task(
+          name: "Завершить отчет",
+          description: "Доделать презентацию",
+          isImportant: true,
+          isCompleted: false,
+          lastModified: DateTime.now(),
+          createdAt: DateTime.now(),
+        ),
+      ],
+    ),
+  ];
 
-  final SettingsController settingsController;
+  MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Glue the SettingsController to the MaterialApp.
-    //
-    // The ListenableBuilder Widget listens to the SettingsController for changes.
-    // Whenever the user updates their settings, the MaterialApp is rebuilt.
-    return ListenableBuilder(
-      listenable: settingsController,
-      builder: (BuildContext context, Widget? child) {
-        return MaterialApp(
-          // Providing a restorationScopeId allows the Navigator built by the
-          // MaterialApp to restore the navigation stack when a user leaves and
-          // returns to the app after it has been killed while running in the
-          // background.
-          restorationScopeId: 'app',
-
-          // Provide the generated AppLocalizations to the MaterialApp. This
-          // allows descendant Widgets to display the correct translations
-          // depending on the user's locale.
-          localizationsDelegates: const [
-            AppLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          supportedLocales: const [
-            Locale('en', ''), // English, no country code
-          ],
-
-          // Use AppLocalizations to configure the correct application title
-          // depending on the user's locale.
-          //
-          // The appTitle is defined in .arb files found in the localization
-          // directory.
-          onGenerateTitle: (BuildContext context) =>
-              AppLocalizations.of(context)!.appTitle,
-
-          // Define a light and dark color theme. Then, read the user's
-          // preferred ThemeMode (light, dark, or system default) from the
-          // SettingsController to display the correct theme.
-          theme: ThemeData(),
-          darkTheme: ThemeData.dark(),
-          themeMode: settingsController.themeMode,
-
-          // Define a function to handle named routes in order to support
-          // Flutter web url navigation and deep linking.
-          onGenerateRoute: (RouteSettings routeSettings) {
-            return MaterialPageRoute<void>(
-              settings: routeSettings,
-              builder: (BuildContext context) {
-                switch (routeSettings.name) {
-                  case SettingsView.routeName:
-                    return SettingsView(controller: settingsController);
-                  case SampleItemDetailsView.routeName:
-                    return const SampleItemDetailsView();
-                  case SampleItemListView.routeName:
-                  default:
-                    return const SampleItemListView();
-                }
+    return MaterialApp(
+      home: Scaffold(
+        appBar: AppBar(
+          title: const Text('Списки задач'),
+        ),
+        body: ListView.builder(
+          itemCount: taskLists.length,
+          itemBuilder: (context, index) {
+            return ListTile(
+              title: Text(taskLists[index].name),
+              onTap: () {
+                // Перейти к просмотру задач в списке
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        TaskListScreen(taskList: taskLists[index]),
+                  ),
+                );
               },
             );
           },
-        );
-      },
+        ),
+      ),
+    );
+  }
+}
+
+class TaskListScreen extends StatelessWidget {
+  final TaskList taskList;
+
+  const TaskListScreen({super.key, required this.taskList});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(taskList.name),
+      ),
+      body: ListView.builder(
+        itemCount: taskList.tasks.length,
+        itemBuilder: (context, index) {
+          Task task = taskList.tasks[index];
+          return ListTile(
+            title: Text(
+              task.name,
+              style: task.isCompleted
+                  ? const TextStyle(decoration: TextDecoration.lineThrough)
+                  : const TextStyle(),
+            ),
+            subtitle: Text(task.description),
+            trailing: task.isImportant ? const Icon(Icons.warning) : null,
+          );
+        },
+      ),
     );
   }
 }
